@@ -1,0 +1,8 @@
+{
+  "name": "VitalScan AI - Rural Health",
+  "description": "A contactless vitals monitoring tool using rPPG technology for rural healthcare triage.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
