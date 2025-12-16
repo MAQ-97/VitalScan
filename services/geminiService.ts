@@ -1,43 +1,40 @@
 import { GoogleGenAI } from "@google/genai";
 import { VitalsResult } from "../types";
 
-const initGenAI = () => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key not found");
-  }
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
-};
+/**
+ * AI Triage Service
+ * 
+ * Uses Google Gemini API to analyze vital signs and provide a triage report.
+ */
+export const generateTriageReport = async (vitals: VitalsResult): Promise<string> => {
+  // Initialize the client with the API key from environment variables
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-export const generateTriageReport = async (vitals: VitalsResult) => {
-  try {
-    const ai = initGenAI();
+  const rr = vitals.respiratoryRate ? `${vitals.respiratoryRate} BPM` : 'Not Measured';
+  const hrv = vitals.hrv ? `${vitals.hrv} ms` : 'Not Measured';
+
+  const prompt = `
+    You are a medical triage assistant. Analyze the following vital signs and provide a brief assessment.
     
-    const prompt = `
-      You are an AI medical assistant for a rural clinic in Africa. 
-      Analyze the following patient vitals collected via rPPG (contactless face scan):
-      
-      Heart Rate: ${vitals.heartRate} BPM
-      Respiratory Rate: ${vitals.respiratoryRate || 'N/A'} BPM
-      Stress Index (HRV): ${vitals.hrv || 'N/A'} ms
-      Signal Confidence: ${vitals.confidence}%
-      
-      Instructions:
-      1. Provide a brief assessment (Normal, Elevated, Low).
-      2. Suggest immediate next steps for the nurse/clinician.
-      3. Ask 3 relevant follow-up questions to ask the patient based on these vitals.
-      
-      Keep the tone professional, supportive, and concise. Do not make a definitive medical diagnosis.
-      Output format: Plain text with clear headers.
-    `;
+    Patient Vitals:
+    - Heart Rate: ${vitals.heartRate} BPM
+    - Respiratory Rate: ${rr}
+    - HRV (Stress Index): ${hrv}
+    - Signal Confidence: ${vitals.confidence}%
+    
+    Please provide a structured response in Markdown:
+    1. Assessment: A summary of the patient's condition.
+    2. Explanation: Analysis of the vital signs.
+    3. Recommended Actions: Immediate advice or steps.
+    4. Screening Questions: Follow-up questions to ask the patient.
+    
+    Disclaimer: This is for informational purposes only and does not replace professional medical advice.
+  `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
 
-    return response.text;
-  } catch (error) {
-    console.error("Gemini Triage Error:", error);
-    return "Unable to generate AI triage report at this time. Please proceed with standard manual triage protocols.";
-  }
+  return response.text || "Unable to generate triage report.";
 };
