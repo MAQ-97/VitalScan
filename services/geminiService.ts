@@ -33,9 +33,6 @@ export const generateTriageReport = async (vitals: VitalsResult) => {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
-      config: {
-        maxOutputTokens: 350,
-      }
     });
 
     return response.text;
